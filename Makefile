@@ -1,4 +1,4 @@
-CFLAGS=-std= c11 -g -static
+CFLAGS=-std=c11 -g -static
 
 0cc: 0cc.c
 
