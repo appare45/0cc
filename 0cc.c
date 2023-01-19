@@ -66,7 +66,7 @@ bool consume(char op) {
 // それ以外の場合にはエラーを報告する
 void expect(char op) {
   if (token->kind != TK_RESERVED || token->str[0] != op)
-  error_at(token->str, "数ではありません");
+  error_at(token->str, "expected '%c'", op);
   token = token->next;
 }
 
@@ -149,11 +149,7 @@ struct Node {
   int val; // kindがND_NUMの場合にのみ使う
 };
 
-Node *expr();
-Node *mul();
-Node *primary();
-
-// 新しいノードを作る（枝）
+// 新しいノードを作る
 Node *new_node(NodeKind kind) {
   Node *node = calloc(1, sizeof(Node));
   node->kind = kind;
@@ -174,19 +170,11 @@ Node *new_num(int val) {
   return node;
 }
 
-// mul = primary ("*" primary | "/" primary)*
-Node *mul() {
-  Node *node = primary();
 
-  for (;;) {
-    if (consume('*'))
-      node = new_binary(ND_MUL, node, primary());
-    else if (consume('/'))
-      node = new_binary(ND_DIV, node, primary());
-    else
-      return node;
-  }
-}
+Node *expr();
+Node *mul();
+Node *unary();
+Node *primary();
 
 // expr = mul ("+" mul | "-" mul)*
 Node *expr() {
@@ -203,6 +191,30 @@ Node *expr() {
   }
 }
 
+// mul = unary ("*" unary | "/" unary)*
+Node *mul() {
+  Node *node = unary();
+
+  for (;;) {
+    if (consume('*'))
+      node = new_binary(ND_MUL, node, unary());
+    else if (consume('/'))
+      node = new_binary(ND_DIV, node, unary());
+    else
+      return node;
+  }
+}
+
+// unary = ("+" | "-")? unary
+
+Node *unary() {
+  if (consume('+'))
+    return unary();
+  if (consume('-'))
+    return new_binary(ND_SUB, new_num(0), unary());
+  return primary();
+}
+
 // primary = "(" expr ")" | num
 Node *primary() {
   // 次のトークンが"("なら、"(" expr ")"のはず
@@ -215,6 +227,7 @@ Node *primary() {
   // そうでなければ数値のはず
   return new_num(expect_number());
 }
+
 
 // スタックマシンを用いてアセンブリを出力
 void gen(Node *node) {
