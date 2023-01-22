@@ -1,0 +1,9 @@
+{
+  "grammarly.selectors": [
+    {
+      "language": "c",
+      "scheme": "file",
+      "pattern": "0cc.c"
+    }
+  ]
+}
