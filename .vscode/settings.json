@@ -1,9 +1,11 @@
 {
-  "grammarly.selectors": [
-    {
-      "language": "c",
-      "scheme": "file",
-      "pattern": "0cc.c"
-    }
-  ]
+  "files.associations": {
+    "ctype.h": "c",
+    "stdarg.h": "c",
+    "stdbool.h": "c",
+    "stdio.h": "c",
+    "cctype": "c",
+    "stdlib.h": "c",
+    "0cc.h": "c"
+  }
 }
