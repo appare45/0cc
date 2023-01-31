@@ -6,20 +6,20 @@
 #include <stdlib.h>
 
 
-// If the next token is the expected symbol, read one token and return true.
+// If the next token is the expected symbol, read one token.
 // Otherwise, report an error.
 void expect(char *op) {
   if (token->kind != TK_RESERVED || 
       strlen(op) != token->len ||
       memcmp(token->str, op, token->len))
-  error_at(token->str, "expected '%c'", op);
+    error_at(token->str, "expected '%c'", op);
   token = token->next;
 }
 
 // If the next token is the expected symbol, read one token and return true.
 // Otherwise, return false
 bool consume(char *op) {
-  if (token->kind != TK_RESERVED || 
+  if (token->kind != TK_RESERVED ||
       strlen(op) != token->len || 
       memcmp(token->str, op, token->len))
     return false;
@@ -35,6 +35,20 @@ int expect_number() {
   token = token->next;
   return val;
 }
+
+// If the next token is an identifier, read one token and return the token.
+// Otherwise return NULL
+Token *consume_ident() {
+  if (token->kind == TK_IDENT){
+    Token *tok = token;
+    token = token->next;
+    return tok;
+  }
+  else{
+    return NULL;
+  }
+}
+
 
 // Whether the token is eof
 bool at_eof() {
@@ -56,7 +70,7 @@ bool startswith(char *p, char *q) {
   return memcmp(p, q, strlen(q)) == 0;
 }
 
-Token *tokenize() {
+void tokenize() {
   char *p = user_input;
   // Initial token
   Token head;
@@ -80,7 +94,8 @@ Token *tokenize() {
     }
 
     // Single-letter operator
-    if(strchr("+-*/()<>", *p)) {
+    if (strchr("+-*/()<>=;", *p))
+    {
       cur = new_token(TK_RESERVED, cur, p++, 1);
       continue;
     }
@@ -94,12 +109,17 @@ Token *tokenize() {
       continue;
     }
 
+    // Single letter variable
+    if('a' <= *p && *p <= 'z') {
+      cur = new_token(TK_IDENT, cur, p++, 1);
+      continue;
+    }
     error_at(p, "トークナイズできません");
   }
 
-  new_token(TK_EOF, cur, p, 0);
-  // 最初のトークンを返す
-  return head.next;
+  cur = new_token(TK_EOF, cur, p, 0);
+  token = head.next;
+  return;
 }
 
 // Create a new node
@@ -124,12 +144,24 @@ Node *new_num(int val) {
   return node;
 }
 
-// primary = "(" expr ")" | num
+Node *expr();
+
+// primary = "(" expr ")" | num | ident
 Node *primary() {
   // 次のトークンが"("なら、"(" expr ")"のはず
   if (consume("(")) {
     Node *node = expr();
     expect(")");
+    return node;
+  }
+
+  // Identifier
+  Token *tok = consume_ident();
+  if (tok)
+  {
+    Node *node = calloc(1, sizeof(Node));
+    node->kind = ND_LVAR;
+    node->offset = (tok->str[0] - 'a' + 1) * 8;
     return node;
   }
 
@@ -149,7 +181,6 @@ Node *unary() {
 // mul = unary ("*" unary | "/" unary)*
 Node *mul() {
   Node *node = unary();
-
   for (;;) {
     if (consume("*"))
       node = new_binary(ND_MUL, node, unary());
@@ -206,7 +237,36 @@ Node *equality() {
   } 
 }
 
-// expr = equality
+// assign = equality ("=" assign)?
+Node *assign() {
+  Node *node = equality();
+  for (;;) 
+  {
+    if (consume("="))
+      node = new_binary(ND_ASSIGN, node, assign());
+    else
+      return node;
+  }
+}
+
+// expr = assign
 Node *expr() {
-  return equality();
+  return assign();
+}
+
+// stmt = expr ";"
+Node *stmt() {
+  Node *node = expr();
+  expect(";");
+  return node;
+}
+
+Node *code[100];
+// program = stmt*
+void program(Token tok) {
+  int i = 0;
+  while(!at_eof()){
+    code[i++] = stmt();
+  }
+  code[i] = NULL;
 }

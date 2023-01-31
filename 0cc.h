@@ -3,6 +3,7 @@
 // Types of tokens
 typedef enum {
   TK_RESERVED,  // Operator
+  TK_IDENT,     // Identifier
   TK_NUM,       // Integer
   TK_EOF,       // End of line
 } TokenKind;
@@ -31,7 +32,7 @@ void error(char *fmt, ...);
 void error_at(char *loc, char *fmt, ...);
 
 
-Token *tokenize();
+void tokenize();
 
 // Abstract syntax tree node kind
 typedef enum
@@ -40,6 +41,8 @@ typedef enum
   ND_SUB, // -
   ND_MUL, // *
   ND_DIV, // /
+  ND_ASSIGN,  // =
+  ND_LVAR,  //Local variable
   ND_NUM, // Integer
   ND_NE,  // !=
   ND_EQ,  // ==
@@ -55,9 +58,11 @@ struct Node {
   Node *rhs;      // Right side
   Node *lhs;      // Left side
   int val;        // Use only if the node kind is integer
+  int offset;     // Use only if the node kind is local variable
 };
 
-Node *expr();
+extern Node *code[100];
+void program();
 
 // Output assembly by using stack machine
 void gen(Node *node);
