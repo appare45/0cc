@@ -58,9 +58,16 @@ void tokenize() {
       continue;
     }
 
-    // Single letter variable
+    // local variable
     if('a' <= *p && *p <= 'z') {
-      cur = new_token(TK_IDENT, cur, p++, 1);
+      int len = 0;
+      char *str = p;
+      while ('a' <= *p && *p <= 'z')
+      {
+        len++;
+        p++;
+      }
+      cur = new_token(TK_IDENT, cur, str, len);
       continue;
     }
     error_at(p, "トークナイズできません");

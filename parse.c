@@ -6,8 +6,34 @@
 #include <stdlib.h>
 
 
-// If the next token is the expected symbol, read one token.
-// Otherwise, report an error.
+typedef struct LVar LVar;
+
+// type of local variable
+struct LVar {
+  LVar *next;
+  char *name;
+  int len;
+  int offset;
+};
+
+// loval variables
+LVar *locals;
+
+// find local variable by name
+LVar *find_lvar(Token *tok) {
+  for (LVar *var = locals; var; var = var->next)
+    if (var->len == token->len && !memcmp(tok->str, var->name, var->len))
+      return var;
+    return NULL;
+}
+
+
+/**
+ * \fn void expect(char *op)
+ * \brief If the next token is expected symbole, read one token.
+ *        Otherwise return an error.
+ * \param op the character to be expected
+*/
 void expect(char *op) {
   if (token->kind != TK_RESERVED || 
       strlen(op) != token->len ||
@@ -16,8 +42,13 @@ void expect(char *op) {
   token = token->next;
 }
 
-// If the next token is the expected symbol, read one token and return true.
-// Otherwise, return false
+/**
+ * \fn bool consume(char *op)
+ * \brief If the next token is the expected symbol, read one token and return true.
+ *        Otherwise, return false
+ * \param op the character to be expected
+ * \return  whether the next token is expected
+*/
 bool consume(char *op) {
   if (token->kind != TK_RESERVED ||
       strlen(op) != token->len || 
@@ -27,7 +58,12 @@ bool consume(char *op) {
   return true;
 }
 
-// If the next token is an integer, read one token and return the value. Otherwise, report an error.
+/**
+ * \fn int expect_number()
+ * \brief if the next toke is an integer, read one token and return the value.
+ *        Otherwise, report an error.
+ * \return the integer, value of the current token
+*/
 int expect_number() {
   if (token->kind != TK_NUM)
     error_at(token->str, "数ではありません");
@@ -36,8 +72,11 @@ int expect_number() {
   return val;
 }
 
-// If the next token is an identifier, read one token and return the token.
-// Otherwise return NULL
+/**
+ * \fn Token *consume_ident()
+ * \brief consume one token and determine if it is an identifier
+ * \return if the next toke is an identifier, return the next token and read through the token. otherwise return NULL.
+*/
 Token *consume_ident() {
   if (token->kind == TK_IDENT){
     Token *tok = token;
@@ -50,19 +89,35 @@ Token *consume_ident() {
 }
 
 
-// Whether the token is eof
+/**
+ * \fn bool at_eof()
+ * \brief determine if the token is eof
+ * \return wheter the token is eof or not
+*/
 bool at_eof() {
   return token->kind == TK_EOF;
 }
 
-// Create a new node
+/**
+ * \fn Node *new_node(NodeKind kind)
+ * \brief create new node
+ * \param kinde the kind of the node to be created
+ * \return the created node
+*/
 Node *new_node(NodeKind kind) {
   Node *node = calloc(1, sizeof(Node));
   node->kind = kind;
   return node;
 }
 
-// Create a new binary node
+/**
+ * \fn Node *new_binary(NodeKinde kind, Node *lhs, Node *rhs)
+ * \brief create a new binary node
+ * \param kind the kind of node to be created
+ * \param lhs the node of left hand of the binary
+ * \param rhs the node of right hand of the binary
+ * \return the created node
+*/
 Node *new_binary(NodeKind kind, Node *lhs, Node *rhs) {
   Node *node = new_node(kind);
   node->lhs = lhs;
@@ -70,7 +125,13 @@ Node *new_binary(NodeKind kind, Node *lhs, Node *rhs) {
   return node;
 }
 
-// Create a new integer node
+/**
+ * \fn Node *new_num(int val)
+ * \brief create a new integer node
+ * \param val the value of the node
+ * \return the created integer node
+ * 
+*/
 Node *new_num(int val) {
   Node *node = new_node(ND_NUM);
   node->val = val;
